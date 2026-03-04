@@ -116,7 +116,7 @@ export default function NutritionScreen() {
               </div>
               {expandedRecipe === recipe.id && (
                 <div className="recipe-card-body">
-                  <table className="data-table" style={{ marginBottom: 10 }}>
+                  <table className="data-table" style={{ marginBottom: 12 }}>
                     <thead>
                       <tr><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>
                     </thead>
@@ -129,8 +129,24 @@ export default function NutritionScreen() {
                       </tr>
                     </tbody>
                   </table>
+                  {recipe.ingredients && (
+                    <>
+                      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Ingredients</p>
+                      <ul style={{ paddingLeft: 16, fontSize: 13, marginBottom: 12 }}>
+                        {recipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+                      </ul>
+                    </>
+                  )}
+                  {recipe.instructions && (
+                    <>
+                      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Instructions</p>
+                      <ol style={{ paddingLeft: 16, fontSize: 13, marginBottom: 12 }}>
+                        {recipe.instructions.map((step, i) => <li key={i} style={{ marginBottom: 4 }}>{step}</li>)}
+                      </ol>
+                    </>
+                  )}
                   <a className="recipe-link" href={recipe.url} target="_blank" rel="noopener noreferrer">
-                    View Recipe ↗
+                    View Full Recipe ↗
                   </a>
                 </div>
               )}

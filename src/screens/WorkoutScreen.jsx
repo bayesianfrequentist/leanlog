@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { loadData, saveData } from '../storage/storage';
-import { WORKOUTS, WEEKLY_SCHEDULE, DAY_TO_WORKOUT } from '../data/planData';
+import { WORKOUTS, DAY_TO_WORKOUT } from '../data/planData';
 import { epley1RM } from '../utils/calculations';
 import SetLogger from '../components/SetLogger';
 import RestTimer from '../components/RestTimer';
 import OneRMChart from '../components/OneRMChart';
 
+const ONE_RM_EXERCISES = ['Barbell Bench Press', 'Barbell Row', 'Barbell Back Squat', 'Romanian Deadlift'];
+
 function getTodayWorkoutKey() {
   const dow = new Date().getDay();
   return DAY_TO_WORKOUT[dow] || null;
-}
-
-function getAllExercises() {
-  return [...new Set(
-    Object.values(WORKOUTS).flatMap(w => w.exercises.map(e => e.name))
-  )];
 }
 
 export default function WorkoutScreen() {
@@ -24,29 +20,32 @@ export default function WorkoutScreen() {
   const [session, setSession] = useState(null);   // { workoutKey, exercises: [{...plan, sets:[], note:''}] }
   const [activeTimer, setActiveTimer] = useState(null); // { exerciseIdx, setIdx, seconds }
   const [expandedHistory, setExpandedHistory] = useState(null);
-  const [selectedExercise, setSelectedExercise] = useState(getAllExercises()[0] || '');
+  const [selectedExercise, setSelectedExercise] = useState(ONE_RM_EXERCISES[0]);
+  const [unscheduledKey, setUnscheduledKey] = useState(Object.keys(WORKOUTS)[0]);
+
+  function initSession(wKey) {
+    const plan = WORKOUTS[wKey];
+    if (!plan) return;
+    setSession({
+      workoutKey: wKey,
+      exercises: plan.exercises.map(ex => ({
+        ...ex,
+        setData: Array.from({ length: ex.sets }, (_, i) => ({
+          setNumber: i + 1,
+          weight_lbs: '',
+          reps: ex.reps || '',
+          completed: false,
+        })),
+        note: '',
+      })),
+    });
+  }
 
   useEffect(() => {
     const d = loadData();
     setAppData(d);
-
     const wKey = getTodayWorkoutKey();
-    if (wKey && WORKOUTS[wKey]) {
-      const plan = WORKOUTS[wKey];
-      setSession({
-        workoutKey: wKey,
-        exercises: plan.exercises.map(ex => ({
-          ...ex,
-          setData: Array.from({ length: ex.sets }, (_, i) => ({
-            setNumber: i + 1,
-            weight_lbs: '',
-            reps: ex.reps || '',
-            completed: false,
-          })),
-          note: '',
-        })),
-      });
-    }
+    if (wKey) initSession(wKey);
   }, []);
 
   function handleSetDone(exerciseIdx, setIdx, { weight, reps }) {
@@ -126,7 +125,6 @@ export default function WorkoutScreen() {
     alert('Workout saved!');
   }
 
-  const allExercises = getAllExercises();
   const latestWeight = appData?.weight_log?.slice(-1)?.[0]?.weight_lbs || null;
   const history = (appData?.workout_log || []).slice().reverse();
 
@@ -204,9 +202,20 @@ export default function WorkoutScreen() {
               </button>
             </>
           ) : (
-            <div className="empty-state">
-              <p style={{ fontSize: 32 }}>🏖️</p>
-              <p>No workout scheduled today. Enjoy your rest!</p>
+            <div className="card">
+              <p className="card-title">Start a workout</p>
+              <select
+                value={unscheduledKey}
+                onChange={e => setUnscheduledKey(e.target.value)}
+                style={{ width: '100%', marginBottom: 12 }}
+              >
+                {Object.keys(WORKOUTS).map(k => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+              <button className="btn-primary btn-full" onClick={() => initSession(unscheduledKey)}>
+                Start Workout
+              </button>
             </div>
           )}
         </div>
@@ -218,7 +227,7 @@ export default function WorkoutScreen() {
           <div className="card mb-12">
             <p className="card-title">Exercise</p>
             <select value={selectedExercise} onChange={e => setSelectedExercise(e.target.value)}>
-              {allExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+              {ONE_RM_EXERCISES.map(ex => <option key={ex} value={ex}>{ex}</option>)}
             </select>
           </div>
 
